@@ -1,0 +1,34 @@
+
+```{r}
+shoppers_copy$Revenue <- factor(shoppers_copy$Revenue, labels = c("FALSE", "TRUE"))
+
+indxTrain <- createDataPartition(y = shoppers_copy$Revenue,p = 0.8,list = FALSE)
+training <- shoppers_copy[indxTrain,]
+testing <- shoppers_copy[-indxTrain,]
+```
+
+```{r}
+table(training$Revenue)
+```
+
+```{r}
+X_gnb = training[,-17]
+y_gnb = training$Revenue
+```
+
+```{r}
+model = train(X_gnb, y_gnb, 'nb', trControl=trainControl(method='cv',number=10))
+model
+```
+
+```{r}
+myprediction <- predict(model,newdata = testing )
+```
+
+```{r}
+confusionMatrix(data = myprediction, reference = testing$Revenue)
+```
+
+```{r}
+
+```

@@ -1,0 +1,539 @@
+---
+title: "Final Project"
+author: "Yilin Sun, Victoria He"
+date: '2022-05-22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+shoppers <- read.csv("online_shoppers_intention.csv")
+
+shoppers_copy <- read.csv("online_shoppers_intention.csv")
+```
+
+```{r}
+summary(shoppers)
+```
+
+LASSO on data 
+```{r}
+library(gamlr) 
+spx <- sparse.model.matrix(Revenue ~ ., data=shoppers)
+spy <- shoppers$Revenue
+```
+
+```{r}
+splasso <- gamlr(spx, spy, family="binomial")
+```
+
+```{r}
+plot(splasso)
+```
+
+```{r}
+summary(splasso)
+```
+
+```{r}
+spcv <- cv.gamlr(spx, spy, family="binomial", verb=TRUE)
+```
+
+```{r}
+plot(spcv)
+```
+
+```{r}
+best_lambda <- spcv$lambda.min
+library(glmnet)
+best_model <- glmnet(spx, spy, alpha = 1, lambda = best_lambda)
+```
+
+```{r}
+coef(best_model)
+```
+
+Linear regression 
+```{r}
+splinear = lm(Revenue~. , data = shoppers)
+```
+
+```{r}
+summary(splinear)
+```
+
+```{r}
+sf = summary(splinear)
+p <- sf$coef[,4]
+```
+
+```{r}
+p
+```
+
+FDR
+```{r}
+hist(p,col="lightblue",breaks=10)
+p_ordered<-p[order(p,decreasing=F)]
+```
+
+```{r}
+fdr_cut <- function(pvals, q, plotit=TRUE, ...){
+	
+  pvals <- pvals[!is.na(pvals)]
+  
+  N <- length(pvals)
+  
+  k <- rank(pvals, ties.method="min")
+  
+  alpha <- max(pvals[ pvals<= (q*k/N) ])
+  
+  if(plotit){
+  
+    sig <- factor(pvals<=alpha)
+  
+    o <- order(pvals)
+  
+    plot(pvals[o], col=c("grey60","red")[sig[o]], pch=20, ..., 
+       ylab="p-values", xlab="tests ordered by p-value", main = paste('FDR =',q))
+  
+    lines(1:N, q*(1:N)/N)
+  }
+  
+  return(alpha)
+}
+
+
+```
+
+```{r}
+fdr_cut(p, q = 0.05)
+```
+
+```{r}
+fdr_cut(p, q = 0.1)
+```
+
+```{r}
+fdr_cut(p, q = 0.01)
+```
+
+```{r}
+cutoff <- fdr_cut(p, q = 0.01, plotit = FALSE)
+
+signif <- p_ordered <= cutoff  
+
+signif
+```
+
+```{r}
+
+
+shoppers_copy$Monthsig = 
+	factor(shoppers$Month == 'Nov'  | shoppers$Month == 'Dec')
+```
+
+```{r}
+summary(shoppers_copy$Monthsig)
+```
+
+```{r}
+
+shoppers_copy = subset(shoppers_copy, select = c(which(signif[2:27] == TRUE) ))
+```
+
+```{r}
+signif <- p <= cutoff  
+signif [signif == TRUE]
+```
+
+```{r}
+which(signif == TRUE)
+```
+
+```{r}
+col = c(6, 7, 8, 9, 16)
+```
+
+```{r}
+shoppers_copy = subset(shoppers_copy, select = col)
+```
+
+```{r}
+shoppers_copy$Monthsig = 
+	factor(shoppers$Month == 'Nov'  | shoppers$Month == 'Dec')
+```
+
+```{r}
+shoppers_copy$Revenue = shoppers$Revenue
+```
+
+```{r}
+library(dplyr)
+
+shoppers_copy$id = row.names(shoppers_copy)
+set.seed(500)
+
+train = shoppers_copy %>% sample_frac(0.8)
+test = anti_join(shoppers_copy, train, by = 'id')
+```
+
+```{r}
+y_train = train$Revenue
+x_train = subset(train, select = -c(7))
+```
+
+```{r}
+log_reg = glm(y_train~ ., data = x_train, family = "binomial")
+```
+
+```{r}
+x = subset(shoppers_copy, select = -c(7))
+y = shoppers_copy$Revenue 
+log_reg = glm(y~ ., data = x, family = "binomial")
+```
+
+```{r}
+install.packages("dplyr")
+```
+
+```{r}
+
+x<- scale(shoppers[,c("ProductRelated","PageValues")])
+n = length(shoppers$Revenue)
+rev = shoppers$Revenue
+train = sample(1:n,200)
+library(class)
+
+nearest1 <- knn(train=x[train,], test=x[-train,], cl=rev[train], k=1)
+nearest5 <- knn(train=x[train,], test=x[-train,], cl=rev[train], k=5)
+
+
+```
+
+```{r}
+par(mfrow=c(1,2))
+
+plot(x[train,], col=rev[train], cex=.8, pch=18,main="1-nearest neighbor")
+
+points(x[-train,], pch=21, col=1, cex=1.25)
+
+points(x[-train,], bg=nearest1, pch=21, col=grey(.9), cex=1.25)
+
+
+
+plot(x[train,], col=rev[train], cex=.8,pch=18, main="5-nearest neighbors")
+
+points(x[-train,], pch=21, col=1, cex=1.25)
+
+points(x[-train,], bg=nearest5, pch=21, col=grey(.9), cex=1.25)
+
+legend("topright", legend=levels(as.factor(rev)), fill=1:6, bty="n", cex=.75)
+```
+```{r}
+rev
+```
+
+
+```{r}
+train <- sample(1:n,200)
+
+library(class)
+
+nearest1 <- knn(train=x[train,], test=x[-train,], cl=gtype[train], k=1)
+```
+
+```{r}
+admin <- shoppers$Administrative
+
+summary(admin)
+```
+
+```{r}
+table(admin)
+```
+
+```{r}
+hist(admin)
+```
+
+```{r}
+admin_dur = shoppers$Administrative_Duration
+```
+
+```{r}
+summary(admin_dur)
+```
+
+```{r}
+boxplot(admin_dur)
+```
+
+```{r}
+info <- shoppers$Informational
+```
+
+```{r}
+table(info)
+```
+
+```{r}
+hist(info)
+```
+
+```{r}
+infodur <- shoppers$Informational_Duration
+```
+
+```{r}
+summary(infodur)
+```
+
+```{r}
+boxplot(infodur)
+```
+
+
+```{r}
+prodre <- shoppers$ProductRelated
+hist(prodre)
+boxplot(prodre)
+```
+
+```{r}
+prodre_dur <- shoppers$ProductRelated_Duration
+plot(prodre_dur)
+```
+
+```{r}
+br <- shoppers$BounceRates
+summary(br)
+plot(br)
+boxplot(br)
+```
+
+```{r}
+er <- shoppers$ExitRates
+boxplot(er)
+plot(er)
+```
+
+```{r}
+pv <- shoppers$PageValues
+plot(pv)
+boxplot(pv)
+```
+
+```{r}
+sd <- shoppers$SpecialDay
+hist(sd)
+```
+
+```{r}
+month <- shoppers$Month
+table(month)
+```
+
+```{r}
+wk <- shoppers$Weekend
+table(wk)
+```
+
+```{r}
+hist(er)
+```
+
+```{r}
+table(month)
+```
+
+```{r}
+install.packages("randomForest") 
+
+```
+
+```{r}
+library(randomForest)
+```
+
+```{r}
+set.seed(100)
+train <- sample(nrow(shoppers_copy), 0.8*nrow(shoppers_copy), replace = FALSE)
+TrainSet <- shoppers_copy[train,]
+ValidSet <- shoppers_copy[-train,]
+```
+
+```{r}
+model1 <- randomForest(Revenue ~ ., data = TrainSet, importance = TRUE, ntree = 100, cutoff = 2, mtry = 6)
+model1
+```
+
+```{r}
+mypred = predict(model1, data = TrainSet)
+```
+
+
+```{r}
+install.packages("naivebayes")
+```
+
+```{r}
+library(naivebayes)
+```
+
+```{r}
+shoppers_copy$Revenue <- factor(shoppers_copy$Revenue, labels = c("FALSE", "TRUE"))
+```
+
+```{r}
+install.packages("caret")
+```
+
+```{r}
+install.packages("stringi")
+```
+
+```{r}
+library(caret)
+```
+
+```{r}
+indxTrain <- createDataPartition(y = shoppers_copy$Revenue,p = 0.8,list = FALSE)
+training <- shoppers_copy[indxTrain,]
+testing <- shoppers_copy[-indxTrain,]
+```
+
+```{r}
+table(training$Revenue)
+```
+
+```{r}
+X_gnb = training[,-17]
+y_gnb = training$Revenue
+```
+
+```{r}
+library(e1071)
+```
+
+```{r}
+model = train(X_gnb, y_gnb, 'nb', trControl=trainControl(method='cv',number=10))
+```
+
+```{r}
+summary(model)
+```
+
+```{r}
+model
+```
+
+```{r}
+# Model evaluation 
+myprediction <- predict(model,newdata = testing )
+```
+
+```{r}
+confusionMatrix(data = myprediction, reference = testing$Revenue)
+```
+
+```{r}
+var_performance <- filterVarImp(x = training, y = testing$Revenue)
+```
+
+```{r}
+# input: 
+# model: classification model
+# data: training set
+# class: response variable
+
+boundary <- function(model, data, class = NULL, predict_type = "class",
+  resolution = 100, showgrid = TRUE, ...) {
+
+  if(!is.null(class)) cl <- data[,class] else cl <- 1
+  data <- data[,1:2]
+  k <- length(unique(cl))
+
+  plot(data, col = as.integer(cl)+1L, pch = as.integer(cl)+1L, ...)
+
+  # make grid
+  r <- sapply(data, range, na.rm = TRUE)
+  xs <- seq(r[1,1], r[2,1], length.out = resolution)
+  ys <- seq(r[1,2], r[2,2], length.out = resolution)
+  g <- cbind(rep(xs, each=resolution), rep(ys, time = resolution))
+  colnames(g) <- colnames(r)
+  g <- as.data.frame(g)
+
+  ### guess how to get class labels from predict
+  ### (unfortunately not very consistent between models)
+  p <- predict(model, g, type = "raw")
+  if(is.list(p)) p <- p$class
+  p <- as.factor(p)
+
+  if(showgrid) points(g, col = as.integer(p)+1L, pch = ".")
+
+  z <- matrix(as.integer(p), nrow = resolution, byrow = TRUE)
+  contour(xs, ys, z, add = TRUE, drawlabels = FALSE,
+    lwd = 2, levels = (1:(k-1))+.5)
+
+  invisible(z)
+}
+```
+
+```{r}
+boundary(model = model, data = training)
+```
+
+```{r}
+plot(model)
+```
+
+```{r}
+nb <- naive_bayes(X_gnb, y_gnb)
+```
+
+```{r}
+summary(nb)
+```
+
+
+
+```{r}
+nb
+```
+
+```{r}
+head(predict(nb, type = "prob"))
+```
+
+```{r}
+tables(nb)
+```
+
+
+```{r}
+plot(nb, "Month", prob = "conditional")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
