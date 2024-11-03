@@ -24,8 +24,8 @@ we gathered a dataset that records onliner shopper's user behaviors and applied 
 This project contains the typical components of a data analysis research question with ML models implemented: **EDA, model selection, model evaluation, model results.**
 
 In this repository, you will find the following supporting documents: 
-1. The formal project report detailing every step of our analysis;
-2. The raw data, "online_shoppers_intention.csv";
-3. The source code (R) that implemented every step of our project;
-4. A source code (R) that implemented our Naive Bayes model with a Gaussian prior;
+1. `formal_report.pdf`: The formal project report detailing every step of our analysis;
+2. `online_shoppers_intention.csv`: The raw data;
+3. `project_source_code.Rmd`: The source code (R) that implemented every step of our project;
+4. `gnb_source_code.Rmd`: A source code (R) that implemented our Naive Bayes model with a Gaussian prior;
 5. Two png files that visualizes our model results with and without dimension reduction measures. 
