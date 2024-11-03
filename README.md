@@ -18,7 +18,7 @@ This repository contains data, code, and report files related to an academic pro
 between March and June, 2022, at the University of Chicago; 
 
 With online shopping being a crucial part of our daily lives, one important question that all online-shopping platforms ask repeatedly is 
-"What are the main factors that make a customer decide to make a purchase?". In an attempt to scratch the sruface of this complicated question, 
+"What are the main factors that make a customer decide to make a purchase?". In an attempt to scratch the surface of this complicated question, 
 we gathered a dataset that records onliner shopper's user behaviors and applied various classification ML models. 
 
 This project contains the typical components of a data analysis research question with ML models implemented: **EDA, model selection, model evaluation, model results.**
